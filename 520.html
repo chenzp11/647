@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-version" content="5.0.0">
     <title>电商利润计算系统 · Profit Calculator</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -2115,17 +2117,426 @@
             font-size: 12px;
             color: var(--text-secondary);
             transition: all var(--transition-fast);
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+        
+        .flow-step:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
         }
         
         .flow-step.active {
             background: var(--primary-light);
             color: var(--primary-dark);
             font-weight: 600;
+            border-color: var(--primary);
         }
         
         .flow-arrow {
             color: var(--text-quaternary);
             font-size: 12px;
+        }
+        
+        .step-summary {
+            font-size: 11.5px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            padding: 2px 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-left: 4px;
+            max-width: 240px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .step-number {
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+        }
+        
+        /* ========== Rules Page Enhancements ========== */
+        .rules-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 18px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-xs);
+        }
+        
+        .rules-header-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .rules-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .rules-progress-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            flex-shrink: 0;
+            min-width: 130px;
+        }
+        
+        .rules-progress-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 360px;
+        }
+        
+        .rules-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%);
+            border-radius: 4px;
+            transition: width var(--transition-normal);
+        }
+        
+        .rules-progress-percent {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        .rules-header-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        /* 字段搜索 */
+        .field-search-bar {
+            position: relative;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .field-search-bar .input {
+            padding-left: 32px;
+            padding-right: 32px;
+            height: 32px;
+            font-size: 12.5px;
+        }
+        
+        .field-search-icon {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-quaternary);
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+        }
+        
+        .field-search-clear {
+            position: absolute;
+            right: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--bg-tertiary);
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+        
+        .field-search-clear:hover {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+        
+        /* 字段项优化 */
+        .field-item {
+            display: flex !important;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px !important;
+        }
+        
+        .field-item .field-name {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .field-item-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .field-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            flex-wrap: wrap;
+        }
+        
+        .field-level-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        
+        .field-level-tag.level-0 {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        
+        .field-level-tag.level-1 {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+        
+        .field-level-tag.level-2 {
+            background: var(--purple-light);
+            color: var(--purple-dark);
+        }
+        
+        .field-warning {
+            color: var(--warning-dark);
+            font-size: 12px;
+        }
+        
+        .field-dot.partial {
+            background: var(--warning) !important;
+        }
+        
+        /* 字段状态徽章 */
+        .field-status {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .field-status.valid {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        
+        .field-status.invalid {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+        
+        /* 预设模板Tab */
+        .preset-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .preset-tab {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+        
+        .preset-tab:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .preset-tab.active {
+            background: var(--bg-secondary);
+            color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+        }
+        
+        .preset-tab-count {
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 10.5px;
+            font-weight: 500;
+        }
+        
+        .preset-tab.active .preset-tab-count {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        /* 智能推荐 */
+        .preset-recommend {
+            position: relative;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 100%);
+            border: 1px solid var(--primary-lighter);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .preset-recommend-tag {
+            position: absolute;
+            top: -10px;
+            left: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 12px;
+            font-size: 10.5px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+        }
+        
+        .preset-recommend-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 4px;
+        }
+        
+        .preset-recommend-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 2px;
+        }
+        
+        .preset-recommend-desc {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        /* 预设卡片增强 */
+        .preset-card {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .preset-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+        
+        .preset-card-category {
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .preset-card-level {
+            display: inline-flex;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .preset-card-level.level-0 {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+        
+        .preset-card-level.level-1 {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+        
+        .preset-card-level.level-2 {
+            background: var(--purple-light);
+            color: var(--purple-dark);
+        }
+        
+        .preset-card-steps {
+            font-size: 11px;
+            color: var(--text-quaternary);
+            margin-top: 2px;
+        }
+        
+        /* 复制规则弹窗 */
+        .copy-rule-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .copy-rule-preview {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        
+        .copy-rule-preview-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .copy-rule-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            font-size: 12px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+        
+        .copy-rule-step-summary {
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            font-size: 11px;
         }
         
         .preview-result {
@@ -2194,6 +2605,123 @@
             .dm-tabs { flex-wrap: wrap; }
             .dm-tab { flex: none; min-width: 80px; }
             .debug-stats { grid-template-columns: 1fr; }
+            .rules-header { flex-direction: column; align-items: stretch; }
+            .preset-recommend-content { flex-direction: column; align-items: stretch; }
+            .preset-tabs { overflow-x: auto; }
+        }
+        
+        @keyframes presetFadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .preset-card {
+            animation: presetFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        }
+        
+        .preset-card:nth-child(2) { animation-delay: 0.04s; }
+        .preset-card:nth-child(3) { animation-delay: 0.08s; }
+        .preset-card:nth-child(4) { animation-delay: 0.12s; }
+        
+        /* Table row hover enhancement */
+        .table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+        .table tbody tr:hover {
+            background-color: var(--bg-hover) !important;
+        }
+        
+        /* Button press effect */
+        .btn:active, .btn-default:active, .btn-primary:active, .btn-sm:active {
+            transform: scale(0.97);
+        }
+        
+        /* Input focus ring */
+        .input:focus, .select:focus, textarea.input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+        }
+        
+        /* Modal entrance animation */
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-content {
+            animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        /* Card hover lift */
+        .card {
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+        }
+        
+        /* Nav item ripple-like hover */
+        .nav-item {
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: var(--primary);
+            border-radius: 0 3px 3px 0;
+            transform: scaleY(0);
+            transition: transform 0.2s ease;
+        }
+        .nav-item.active::after {
+            transform: scaleY(1);
+        }
+        
+        /* Smooth tag transition */
+        .tag {
+            transition: all 0.15s ease;
+        }
+        
+        /* Upload area active state */
+        .upload-area:active {
+            transform: scale(0.99);
+            background: var(--primary-light);
+        }
+        
+        /* Toast entrance */
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .toast-item {
+            animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        /* Step card entrance */
+        @keyframes stepIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .step-card {
+            animation: stepIn 0.2s ease backwards;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-quaternary);
         }
     </style>
 </head>
@@ -2393,6 +2921,12 @@
             Play: () => (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+            ),
+            Store: () => (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
             ),
             Check: () => (
@@ -2687,7 +3221,87 @@
         
         // ========== Excel Utils ==========
         const ExcelUtils = {
-            parse(file, onProgress) {
+            parseExcelBuffer(arrayBuffer) {
+                const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true, cellNF: true, cellHTML: false });
+                const sheets = {};
+                wb.SheetNames.forEach(name => {
+                    const ws = wb.Sheets[name];
+                    const aoaRaw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+                    const aoaFormatted = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+                    const aoa = aoaRaw.map((row, rIdx) => 
+                        row.map((cell, cIdx) => {
+                            if (cell === null || cell === undefined) {
+                                return aoaFormatted[rIdx]?.[cIdx] ?? null;
+                            }
+                            if (typeof cell === 'number') {
+                                return cell;
+                            }
+                            return cell;
+                        })
+                    );
+                    if (aoa.length > 0) {
+                        const headers = aoa[0].map(h => h != null ? String(h).trim() : '').filter(Boolean);
+                        const rows = aoa.slice(1).map(r => {
+                            const obj = {};
+                            headers.forEach((h, i) => { obj[h] = r[i]; });
+                            return obj;
+                        }).filter(r => Object.values(r).some(v => v !== null && v !== '' && v !== undefined));
+                        sheets[name] = { headers, rows, aoa, worksheet: ws, aoaFormatted };
+                    }
+                });
+                return sheets;
+            },
+            
+            async parse(file, onProgress) {
+                const isZip = file.name.toLowerCase().endsWith('.zip');
+                
+                if (isZip) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onprogress = (e) => {
+                            if (e.lengthComputable && onProgress) {
+                                onProgress(Math.round((e.loaded / e.total) * 30));
+                            }
+                        };
+                        reader.onload = async e => {
+                            try {
+                                if (onProgress) onProgress(40);
+                                const zip = await JSZip.loadAsync(e.target.result);
+                                const excelFiles = [];
+                                zip.forEach((path, entry) => {
+                                    if (!entry.dir && (path.endsWith('.xlsx') || path.endsWith('.xls'))) {
+                                        excelFiles.push({ path, entry });
+                                    }
+                                });
+                                
+                                if (excelFiles.length === 0) {
+                                    reject(new Error('压缩包内未找到Excel文件'));
+                                    return;
+                                }
+                                
+                                const allSheets = {};
+                                for (let i = 0; i < excelFiles.length; i++) {
+                                    const { path, entry } = excelFiles[i];
+                                    const buffer = await entry.async('arraybuffer');
+                                    const sheets = ExcelUtils.parseExcelBuffer(buffer);
+                                    Object.entries(sheets).forEach(([name, data]) => {
+                                        const uniqueName = excelFiles.length > 1 ? `${path}::${name}` : name;
+                                        allSheets[uniqueName] = data;
+                                    });
+                                    if (onProgress) {
+                                        onProgress(40 + Math.round(((i + 1) / excelFiles.length) * 60));
+                                    }
+                                }
+                                
+                                if (onProgress) onProgress(100);
+                                resolve({ fileName: file.name, sheets: allSheets, fileSize: file.size, isZip: true, extractedCount: excelFiles.length });
+                            } catch (err) { reject(err); }
+                        };
+                        reader.onerror = reject;
+                        reader.readAsArrayBuffer(file);
+                    });
+                }
+                
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     
@@ -2699,33 +3313,7 @@
                     
                     reader.onload = e => {
                         try {
-                            const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true, cellNF: true, cellHTML: false });
-                            const sheets = {};
-                            wb.SheetNames.forEach(name => {
-                                const ws = wb.Sheets[name];
-                                const aoaRaw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
-                                const aoaFormatted = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
-                                const aoa = aoaRaw.map((row, rIdx) => 
-                                    row.map((cell, cIdx) => {
-                                        if (cell === null || cell === undefined) {
-                                            return aoaFormatted[rIdx]?.[cIdx] ?? null;
-                                        }
-                                        if (typeof cell === 'number') {
-                                            return cell;
-                                        }
-                                        return cell;
-                                    })
-                                );
-                                if (aoa.length > 0) {
-                                    const headers = aoa[0].map(h => h != null ? String(h).trim() : '').filter(Boolean);
-                                    const rows = aoa.slice(1).map(r => {
-                                        const obj = {};
-                                        headers.forEach((h, i) => { obj[h] = r[i]; });
-                                        return obj;
-                                    }).filter(r => Object.values(r).some(v => v !== null && v !== '' && v !== undefined));
-                                    sheets[name] = { headers, rows, aoa, worksheet: ws, aoaFormatted };
-                                }
-                            });
+                            const sheets = ExcelUtils.parseExcelBuffer(e.target.result);
                             resolve({ fileName: file.name, sheets, fileSize: file.size });
                         } catch (err) { reject(err); }
                     };
@@ -3377,10 +3965,17 @@
                                 break;
                             }
                             case 'join': {
+                                let joinRows = null;
                                 const joinTable = tables.find(t => t.id === step.config.table);
-                                if (joinTable && step.config.key && step.config.fk && step.config.col) {
+                                if (joinTable) {
+                                    joinRows = joinTable.rows;
+                                } else if (step.config.externalId) {
+                                    const ext = (state.externals || []).find(e => e.id === step.config.externalId || e.sheetKey === step.config.externalId);
+                                    if (ext) joinRows = ext.allData || ext.data || [];
+                                }
+                                if (joinRows && step.config.key && step.config.fk && step.config.col) {
                                     const lookup = {};
-                                    joinTable.rows.forEach(r => {
+                                    joinRows.forEach(r => {
                                         lookup[r[step.config.fk]] = r;
                                     });
                                     data = data.map(row => {
@@ -3502,6 +4097,93 @@
                                 data = [{ val: result }];
                                 break;
                             }
+                            case 'distinct': {
+                                const key = step.config.column || 'val';
+                                const seen = new Set();
+                                data = data.filter(row => {
+                                    const v = row[key];
+                                    if (seen.has(v)) return false;
+                                    seen.add(v);
+                                    return true;
+                                });
+                                break;
+                            }
+                            case 'sort': {
+                                const key = step.config.column || 'val';
+                                const dir = step.config.direction || 'asc';
+                                data = [...data].sort((a, b) => {
+                                    const av = a[key], bv = b[key];
+                                    const an = Number(av), bn = Number(bv);
+                                    if (!isNaN(an) && !isNaN(bn)) {
+                                        return dir === 'desc' ? bn - an : an - bn;
+                                    }
+                                    return dir === 'desc' ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+                                });
+                                break;
+                            }
+                            case 'limit': {
+                                const n = Number(step.config.count) || 100;
+                                data = data.slice(0, n);
+                                break;
+                            }
+                            case 'lookup': {
+                                const lookupMap = {};
+                                (step.config.pairs || []).forEach(p => { lookupMap[p.from] = p.to; });
+                                const key = step.config.column || 'val';
+                                data = data.map(row => ({ ...row, [key]: lookupMap[row[key]] !== undefined ? lookupMap[row[key]] : row[key] }));
+                                break;
+                            }
+                            case 'condition': {
+                                data = data.map(row => {
+                                    const col = step.config.column || 'val';
+                                    const val = row[col];
+                                    let match = false;
+                                    const target = step.config.value;
+                                    const v = val != null ? String(val) : '';
+                                    const t = String(target ?? '');
+                                    switch (step.config.op) {
+                                        case '==': match = v === t; break;
+                                        case '!=': match = v !== t; break;
+                                        case '>': match = Number(val) > Number(target); break;
+                                        case '<': match = Number(val) < Number(target); break;
+                                        case '>=': match = Number(val) >= Number(target); break;
+                                        case '<=': match = Number(val) <= Number(target); break;
+                                        case 'contains': match = v.includes(t); break;
+                                        default: match = true;
+                                    }
+                                    return { ...row, [step.config.resultCol || 'condition_result']: match ? (step.config.trueValue ?? 1) : (step.config.falseValue ?? 0) };
+                                });
+                                break;
+                            }
+                            case 'group': {
+                                const key = step.config.column;
+                                if (!key) break;
+                                const groups = {};
+                                data.forEach(row => {
+                                    const gk = row[key];
+                                    if (!groups[gk]) groups[gk] = [];
+                                    groups[gk].push(row);
+                                });
+                                const func = step.config.func || 'sum';
+                                const aggCol = step.config.aggColumn || 'val';
+                                data = Object.entries(groups).map(([gk, rows]) => {
+                                    const values = rows.map(r => {
+                                        const n = Number(String(r[aggCol]).replace(/[,，]/g, '').replace(/[¥￥$€£]/g, ''));
+                                        return isNaN(n) ? 0 : n;
+                                    });
+                                    let result = 0;
+                                    switch (func) {
+                                        case 'sum': result = values.reduce((a, b) => a + b, 0); break;
+                                        case 'avg': result = values.reduce((a, b) => a + b, 0) / values.length; break;
+                                        case 'count': result = rows.length; break;
+                                        case 'max': result = Math.max(...values); break;
+                                        case 'min': result = Math.min(...values); break;
+                                        default: result = values.reduce((a, b) => a + b, 0);
+                                    }
+                                    return { [key]: gk, [aggCol]: result, _groupCount: rows.length };
+                                });
+                                break;
+                            }
                         }
                         
                         stepResults.push({
@@ -3534,47 +4216,201 @@
             },
             
             getPresetTemplates() {
-                return [
-                    {
-                        id: 'profit_simple',
-                        name: '简易利润计算',
-                        desc: '销售额 - 成本 - 费用 = 利润',
-                        steps: [
-                            { type: 'source', config: { table: '', column: '销售额' } },
-                            { type: 'aggregate', config: { func: 'sum' } },
-                            { type: 'formula', config: { expr: '{val} * 0.7' } }
-                        ]
-                    },
-                    {
-                        id: 'roi_calc',
-                        name: 'ROI投资回报率',
-                        desc: '(收益 - 成本) / 成本 × 100%',
-                        steps: [
-                            { type: 'source', config: { table: '', column: '成交额' } },
-                            { type: 'aggregate', config: { func: 'sum' } },
-                            { type: 'formula', config: { expr: '({val} - 1000) / 1000 * 100' } }
-                        ]
-                    },
-                    {
-                        id: 'avg_order',
-                        name: '客单价计算',
-                        desc: '总销售额 / 订单数',
-                        steps: [
-                            { type: 'source', config: { table: '', column: '订单金额' } },
-                            { type: 'aggregate', config: { func: 'avg' } }
-                        ]
-                    },
-                    {
-                        id: 'conversion_rate',
-                        name: '转化率计算',
-                        desc: '成交订单数 / 访客数 × 100%',
-                        steps: [
-                            { type: 'source', config: { table: '', column: '访客数' } },
-                            { type: 'aggregate', config: { func: 'sum' } },
-                            { type: 'formula', config: { expr: '{val} / 1000 * 100' } }
-                        ]
-                    }
-                ];
+                return {
+                    'all': [
+                        {
+                            id: 'profit_simple',
+                            category: 'profit',
+                            platform: 'all',
+                            name: '简易利润计算',
+                            desc: '销售额 - 成本 - 费用 = 利润',
+                            level: 0,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '销售额' } },
+                                { type: 'aggregate', config: { func: 'sum' } },
+                                { type: 'formula', config: { expr: '{val} * 0.7' } }
+                            ]
+                        },
+                        {
+                            id: 'roi_calc',
+                            category: 'profit',
+                            platform: 'all',
+                            name: 'ROI投资回报率',
+                            desc: '(收益 - 成本) / 成本 × 100%',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '成交额' } },
+                                { type: 'aggregate', config: { func: 'sum' } },
+                                { type: 'formula', config: { expr: '({val} - 1000) / 1000 * 100' } }
+                            ]
+                        },
+                        {
+                            id: 'avg_order',
+                            category: 'sales',
+                            platform: 'all',
+                            name: '客单价计算',
+                            desc: '总销售额 / 订单数',
+                            level: 0,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '订单金额' } },
+                                { type: 'aggregate', config: { func: 'avg' } }
+                            ]
+                        },
+                        {
+                            id: 'conversion_rate',
+                            category: 'sales',
+                            platform: 'all',
+                            name: '转化率计算',
+                            desc: '成交订单数 / 访客数 × 100%',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '访客数' } },
+                                { type: 'aggregate', config: { func: 'sum' } },
+                                { type: 'formula', config: { expr: '{val} / 1000 * 100' } }
+                            ]
+                        },
+                        {
+                            id: 'sum_filtered',
+                            category: 'cost',
+                            platform: 'all',
+                            name: '求和（排除退款）',
+                            desc: '排除已退款订单后对金额求和',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '订单金额' } },
+                                { type: 'filter', config: { column: 'val', op: '!=', value: '退款成功' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        },
+                        {
+                            id: 'cost_calc',
+                            category: 'cost',
+                            platform: 'all',
+                            name: '商品成本×数量',
+                            desc: '从成本表关联单价，再乘以解析数量',
+                            level: 2,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '商品id' } },
+                                { type: 'join', config: { table: '', key: '商品id', fk: '商品ID', col: '成本单价' } },
+                                { type: 'virtual', config: { source: '商品规格', target: '解析数量', rule: 'parseQty' } },
+                                { type: 'formula', config: { expr: '{val} * {解析数量}' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        }
+                    ],
+                    'pdd': [
+                        {
+                            id: 'pdd_revenue',
+                            category: 'sales',
+                            platform: 'pdd',
+                            name: '拼多多·销售收入',
+                            desc: '汇总订单实收金额（排除退款）',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '商家实收金额' } },
+                                { type: 'filter', config: { column: '售后状态', op: '!=', value: '退款成功' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        },
+                        {
+                            id: 'pdd_cost',
+                            category: 'cost',
+                            platform: 'pdd',
+                            name: '拼多多·商品成本',
+                            desc: '从产品成本表关联单价 × 解析数量',
+                            level: 2,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '商品id' } },
+                                { type: 'join', config: { table: '', key: '商品id', fk: '商品ID', col: '成本单价' } },
+                                { type: 'virtual', config: { source: '商品规格', target: '解析数量', rule: 'parseQty' } },
+                                { type: 'formula', config: { expr: '{val} * {解析数量}' } },
+                                { type: 'filter', config: { column: '售后状态', op: '!=', value: '退款成功' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        },
+                        {
+                            id: 'pdd_commission',
+                            category: 'cost',
+                            platform: 'pdd',
+                            name: '拼多多·平台扣点',
+                            desc: '订单金额 × 平台扣点比例',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '商家实收金额' } },
+                                { type: 'aggregate', config: { func: 'sum' } },
+                                { type: 'formula', config: { expr: '{val} * 0.006' } }
+                            ]
+                        },
+                        {
+                            id: 'pdd_profit',
+                            category: 'profit',
+                            platform: 'pdd',
+                            name: '拼多多·净利润',
+                            desc: '销售收入 - 商品成本 - 平台扣点',
+                            level: 2,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '商家实收金额' } },
+                                { type: 'aggregate', config: { func: 'sum' } },
+                                { type: 'formula', config: { expr: '{val} * 0.7' } }
+                            ]
+                        }
+                    ],
+                    'taobao': [
+                        {
+                            id: 'tb_revenue',
+                            category: 'sales',
+                            platform: 'taobao',
+                            name: '淘宝·销售收入',
+                            desc: '汇总订单实付金额（排除退款）',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '用户实付金额' } },
+                                { type: 'filter', config: { column: '订单状态', op: '!=', value: '退款成功' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        },
+                        {
+                            id: 'tb_commission',
+                            category: 'cost',
+                            platform: 'taobao',
+                            name: '淘宝·技术服务费',
+                            desc: '订单金额 × 佣金比例',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '用户实付金额' } },
+                                { type: 'aggregate', config: { func: 'sum' } },
+                                { type: 'formula', config: { expr: '{val} * 0.05' } }
+                            ]
+                        }
+                    ],
+                    'douyin': [
+                        {
+                            id: 'dy_revenue',
+                            category: 'sales',
+                            platform: 'douyin',
+                            name: '抖音·GMV汇总',
+                            desc: '汇总订单支付金额',
+                            level: 0,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '订单支付金额' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        },
+                        {
+                            id: 'dy_refund',
+                            category: 'cost',
+                            platform: 'douyin',
+                            name: '抖音·退款金额',
+                            desc: '汇总退款成功订单金额',
+                            level: 1,
+                            steps: [
+                                { type: 'source', config: { table: '', column: '订单支付金额' } },
+                                { type: 'filter', config: { column: '售后状态', op: '==', value: '退款成功' } },
+                                { type: 'aggregate', config: { func: 'sum' } }
+                            ]
+                        }
+                    ]
+                };
             },
             
             getFormulaHints() {
@@ -3649,8 +4485,25 @@
                 const platformCount = state.platforms.length;
                 const shopCount = state.platforms.reduce((sum, p) => sum + p.shops.length, 0);
                 const templateCount = Object.keys(state.templates).length;
-                const ruleCount = Object.keys(state.rules).length;
-                return { platformCount, shopCount, templateCount, ruleCount };
+                let totalFields = 0;
+                let configuredFields = 0;
+                Object.keys(state.templates).forEach(pid => {
+                    const fields = state.templates[pid]?.parseResult?.fields || [];
+                    totalFields += fields.length;
+                    const rules = state.rules[pid] || {};
+                    fields.forEach(f => {
+                        if ((rules[f.id]?.steps || []).length > 0) configuredFields += 1;
+                    });
+                });
+                const fieldCompletion = totalFields > 0 ? Math.round(configuredFields / totalFields * 100) : 0;
+                return { 
+                    platformCount, 
+                    shopCount, 
+                    templateCount, 
+                    totalFields, 
+                    configuredFields, 
+                    fieldCompletion
+                };
             }, [state]);
             
             const getPlatformProgress = (platform) => {
@@ -3666,7 +4519,18 @@
                 total += 1;
                 if (state.rules[platform.id]) completed += 1;
                 
-                return { total, completed, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
+                // 字段完成度
+                const fields = state.templates[platform.id]?.parseResult?.fields || [];
+                const rules = state.rules[platform.id] || {};
+                const fieldDone = fields.filter(f => (rules[f.id]?.steps || []).length > 0).length;
+                
+                return { 
+                    total, 
+                    completed, 
+                    percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+                    fieldCount: fields.length,
+                    fieldDone
+                };
             };
             
             const formatTime = (isoString) => {
@@ -3721,13 +4585,18 @@
                         <div className="stat-card purple">
                             <div className="stat-label">
                                 <Icons.Calculator />
-                                计算规则
+                                字段配置
                             </div>
-                            <div className="stat-value">{stats.ruleCount}</div>
+                            <div className="stat-value">
+                                {stats.configuredFields}
+                                <span style={{ fontSize: 18, color: 'var(--text-quaternary)', fontWeight: 500 }}>
+                                    /{stats.totalFields}
+                                </span>
+                            </div>
                             <div className="stat-icon"><Icons.Calculator /></div>
                             <div className="stat-trend">
                                 <Icons.Sparkles />
-                                <span>套计算规则已配置</span>
+                                <span>完成度 {stats.fieldCompletion}%</span>
                             </div>
                         </div>
                     </div>
@@ -3771,6 +4640,9 @@
                             </div>
                             {state.platforms.map(platform => {
                                 const progress = getPlatformProgress(platform);
+                                const fieldPercent = progress.fieldCount > 0 
+                                    ? Math.round(progress.fieldDone / progress.fieldCount * 100) 
+                                    : 0;
                                 return (
                                     <div key={platform.id} className="platform-progress" style={{ marginBottom: 16 }}>
                                         <div className="platform-progress-header">
@@ -3785,6 +4657,18 @@
                                                 style={{ width: `${progress.percent}%` }}
                                             ></div>
                                         </div>
+                                        {progress.fieldCount > 0 && (
+                                            <div style={{ 
+                                                display: 'flex', 
+                                                justifyContent: 'space-between', 
+                                                marginTop: 6,
+                                                fontSize: 11,
+                                                color: 'var(--text-tertiary)' 
+                                            }}>
+                                                <span>字段 {progress.fieldDone}/{progress.fieldCount}</span>
+                                                <span>{fieldPercent}%</span>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -4064,7 +4948,7 @@
                                     <input
                                         ref={fileInputRef}
                                         type="file"
-                                        accept=".xlsx,.xls"
+                                        accept=".xlsx,.xls,.zip"
                                         onChange={handleTemplateUpload}
                                         style={{ display: 'none' }}
                                     />
@@ -4293,6 +5177,10 @@
             const [expandedStep, setExpandedStep] = useState(null);
             const [showPreview, setShowPreview] = useState(false);
             const [previewResult, setPreviewResult] = useState(null);
+            const [presetCategory, setPresetCategory] = useState('all');
+            const [fieldSearch, setFieldSearch] = useState('');
+            const [showCopyModal, setShowCopyModal] = useState(false);
+            const [copySourceFieldId, setCopySourceFieldId] = useState('');
             
             const platform = state.platforms.find(p => p.id === currentPlatform);
             const template = state.templates[currentPlatform];
@@ -4307,24 +5195,267 @@
                 }
             }, [fields]);
             
+            useEffect(() => {
+                setPresetCategory(currentPlatform || 'all');
+            }, [currentPlatform]);
+            
             const currentRule = activeField ? savedRules[activeField.id] : null;
+            
+            const filteredFields = fields.filter(f => 
+                f.name.toLowerCase().includes(fieldSearch.toLowerCase()) ||
+                (f.cell || '').toLowerCase().includes(fieldSearch.toLowerCase())
+            );
+            
+            const completedCount = fields.filter(f => (savedRules[f.id]?.steps || []).length > 0).length;
+            const completionRate = fields.length > 0 ? Math.round(completedCount / fields.length * 100) : 0;
+            
+            const inferFieldLevel = (field) => {
+                const steps = savedRules[field.id]?.steps || [];
+                if (steps.length === 0) return null;
+                const hasJoin = steps.some(s => s.type === 'join');
+                const hasVirtual = steps.some(s => s.type === 'virtual');
+                const hasFilter = steps.some(s => s.type === 'filter');
+                if (hasJoin || hasVirtual) return 2;
+                if (hasFilter) return 1;
+                return 0;
+            };
+            
+            const validateRule = (rule) => {
+                if (!rule || !rule.steps || rule.steps.length === 0) {
+                    return { valid: false, msg: '尚未配置任何步骤' };
+                }
+                const source = rule.steps.find(s => s.type === 'source');
+                if (!source) {
+                    return { valid: false, msg: '缺少「数据源」步骤' };
+                }
+                if (!source.config.column) {
+                    return { valid: false, msg: '「数据源」步骤未选择列' };
+                }
+                return { valid: true, msg: '配置完整' };
+            };
+            
+            const recommendPreset = (fieldName) => {
+                if (!fieldName) return null;
+                const n = fieldName.toLowerCase();
+                const allPresets = CalcEngine.getPresetTemplates();
+                const list = [...(allPresets[currentPlatform] || []), ...(allPresets.all || [])];
+                let score = list.map(p => {
+                    let s = 0;
+                    const pn = p.name.toLowerCase();
+                    if (n.includes('销售') || n.includes('收入') || n.includes('实收') || n.includes('gmv')) {
+                        if (p.category === 'sales') s += 10;
+                    }
+                    if (n.includes('成本') || n.includes('扣点') || n.includes('费用') || n.includes('退款')) {
+                        if (p.category === 'cost') s += 10;
+                    }
+                    if (n.includes('利润') || n.includes('净利') || n.includes('roi')) {
+                        if (p.category === 'profit') s += 10;
+                    }
+                    if (pn.includes(n) || n.includes(pn.split('·').pop().toLowerCase())) s += 5;
+                    return { p, s };
+                });
+                score.sort((a, b) => b.s - a.s);
+                return score[0]?.s > 0 ? score[0].p : null;
+            };
+            
+            const copyFieldRule = (sourceId, targetId) => {
+                if (!sourceId || !targetId || sourceId === targetId) {
+                    addToast('warning', '复制失败', '请选择不同的源字段和目标字段');
+                    return;
+                }
+                const sourceRule = savedRules[sourceId];
+                if (!sourceRule?.steps?.length) {
+                    addToast('warning', '复制失败', '源字段尚未配置规则');
+                    return;
+                }
+                Store.set(s => ({
+                    ...s,
+                    rules: {
+                        ...s.rules,
+                        [currentPlatform]: {
+                            ...savedRules,
+                            [targetId]: {
+                                ...savedRules[targetId],
+                                steps: sourceRule.steps.map((step, i) => ({
+                                    ...step,
+                                    id: `step_${Date.now()}_${i}`
+                                }))
+                            }
+                        }
+                    }
+                }));
+                addToast('success', '复制成功', `已复制规则到目标字段`);
+                setShowCopyModal(false);
+                setCopySourceFieldId('');
+            };
+            
+            const clearFieldRule = (fieldId) => {
+                if (!window.confirm('确认清空此字段的计算规则？此操作不可撤销。')) return;
+                Store.set(s => ({
+                    ...s,
+                    rules: {
+                        ...s.rules,
+                        [currentPlatform]: {
+                            ...savedRules,
+                            [fieldId]: { steps: [] }
+                        }
+                    }
+                }));
+                addToast('info', '已清空', '字段规则已重置');
+            };
             
             const getStepTypeInfo = (type) => {
                 const types = {
-                    source: { name: '数据源', icon: <Icons.Database />, color: 'var(--primary)' },
-                    filter: { name: '过滤', icon: <Icons.Filter />, color: 'var(--warning)' },
-                    virtual: { name: '虚拟字段', icon: <Icons.Sparkles />, color: 'var(--purple)' },
-                    join: { name: '跨表关联', icon: <Icons.Layers />, color: 'var(--info)' },
-                    aggregate: { name: '聚合', icon: <Icons.Calculator />, color: 'var(--success)' },
-                    formula: { name: '公式计算', icon: <Icons.Calculator />, color: 'var(--primary)' },
-                    constant: { name: '常量值', icon: <Icons.FileText />, color: 'var(--text-tertiary)' },
-                    text: { name: '文本处理', icon: <Icons.FileText />, color: 'var(--info)' }
+                    source: { name: '数据源', icon: <Icons.Database />, color: 'var(--primary)', bg: 'var(--primary-light)' },
+                    filter: { name: '过滤', icon: <Icons.Filter />, color: 'var(--warning)', bg: 'var(--warning-light)' },
+                    virtual: { name: '虚拟字段', icon: <Icons.Sparkles />, color: 'var(--purple)', bg: 'var(--purple-light)' },
+                    join: { name: '跨表关联', icon: <Icons.Layers />, color: 'var(--info)', bg: 'var(--info-light)' },
+                    aggregate: { name: '聚合', icon: <Icons.Calculator />, color: 'var(--success)', bg: 'var(--success-light)' },
+                    formula: { name: '公式计算', icon: <Icons.Calculator />, color: 'var(--primary)', bg: 'var(--primary-light)' },
+                    constant: { name: '常量值', icon: <Icons.FileText />, color: 'var(--text-tertiary)', bg: 'var(--bg-tertiary)' },
+                    text: { name: '文本处理', icon: <Icons.FileText />, color: 'var(--info)', bg: 'var(--info-light)' },
+                    distinct: { name: '去重', icon: <Icons.Filter />, color: 'var(--warning)', bg: 'var(--warning-light)' },
+                    sort: { name: '排序', icon: <Icons.Layers />, color: 'var(--info)', bg: 'var(--info-light)' },
+                    limit: { name: '限制', icon: <Icons.FileText />, color: 'var(--text-tertiary)', bg: 'var(--bg-tertiary)' },
+                    lookup: { name: '查找替换', icon: <Icons.Search />, color: 'var(--info)', bg: 'var(--info-light)' },
+                    condition: { name: '条件判断', icon: <Icons.Sparkles />, color: 'var(--purple)', bg: 'var(--purple-light)' },
+                    group: { name: '分组聚合', icon: <Icons.Calculator />, color: 'var(--success)', bg: 'var(--success-light)' }
                 };
-                return types[type] || { name: type, icon: <Icons.Settings />, color: 'var(--text-tertiary)' };
+                return types[type] || { name: type, icon: <Icons.Settings />, color: 'var(--text-tertiary)', bg: 'var(--bg-tertiary)' };
+            };
+            
+            const getCategoryInfo = (cat) => {
+                const map = {
+                    sales: { name: '销售类', icon: '💰', color: 'var(--success)' },
+                    cost: { name: '成本类', icon: '🧾', color: 'var(--warning)' },
+                    profit: { name: '利润类', icon: '📈', color: 'var(--primary)' }
+                };
+                return map[cat] || { name: cat, icon: '📦', color: 'var(--text-tertiary)' };
+            };
+            
+            const summarizeStep = (step) => {
+                if (!step || !step.config) return '';
+                const c = step.config;
+                switch (step.type) {
+                    case 'source': return c.column ? `列: ${c.column}` : '未选列';
+                    case 'filter': return c.column && c.op ? `${c.column} ${c.op} ${c.value || ''}` : '未配置';
+                    case 'virtual': return c.source && c.target ? `${c.source} → ${c.target} (${c.rule || 'copy'})` : '未配置';
+                    case 'join': return c.key && c.fk ? `${c.key}=${c.fk}.${c.col || '?'}` : '未配置';
+                    case 'aggregate': return `${c.func || 'sum'}${c.column ? `(${c.column})` : '()'}`;
+                    case 'formula': return c.expr || '未配置';
+                    case 'constant': return `值: ${c.value}`;
+                    case 'text': return c.value || '未配置';
+                    case 'distinct': return `去重: ${c.column || 'val'}`;
+                    case 'sort': return `排序: ${c.column || 'val'} ${c.direction === 'desc' ? '↓' : '↑'}`;
+                    case 'limit': return `限制: ${c.count || 100}行`;
+                    case 'lookup': return `查找替换: ${c.column || 'val'} (${(c.pairs || []).length}条映射)`;
+                    case 'condition': return `条件: ${c.column || 'val'} ${c.op || '=='} ${c.value || '?'}`;
+                    case 'group': return `分组: ${c.column || '?'} → ${c.func || 'sum'}(${c.aggColumn || 'val'})`;
+                    default: return '';
+                }
+            };
+            
+            const duplicateStep = (stepId) => {
+                if (!activeField || !currentRule) return;
+                const idx = currentRule.steps.findIndex(s => s.id === stepId);
+                if (idx === -1) return;
+                const orig = currentRule.steps[idx];
+                const newStep = {
+                    ...orig,
+                    id: `step_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                    config: { ...orig.config }
+                };
+                const newSteps = [
+                    ...currentRule.steps.slice(0, idx + 1),
+                    newStep,
+                    ...currentRule.steps.slice(idx + 1)
+                ];
+                Store.set(s => ({
+                    ...s,
+                    rules: {
+                        ...s.rules,
+                        [currentPlatform]: {
+                            ...savedRules,
+                            [activeField.id]: {
+                                ...savedRules[activeField.id],
+                                steps: newSteps
+                            }
+                        }
+                    }
+                }));
+                setExpandedStep(newStep.id);
+                addToast('success', '克隆成功', '已克隆该步骤');
             };
             
             const addStep = (type) => {
                 if (!activeField) return;
+                
+                const currentSteps = currentRule?.steps || [];
+                
+                const stepLogicChecks = {
+                    source: () => {
+                        const hasSource = currentSteps.some(s => s.type === 'source');
+                        if (hasSource) return { ok: false, msg: '每个规则只能有一个「数据源」步骤' };
+                        if (currentSteps.length > 0) return { ok: false, msg: '「数据源」必须是第一个步骤' };
+                        return { ok: true };
+                    },
+                    filter: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「过滤」前需要有「数据源」' };
+                        const lastAggIdx = currentSteps.map((s, i) => s.type === 'aggregate' ? i : -1).filter(i => i >= 0).pop();
+                        if (lastAggIdx !== undefined && lastAggIdx >= 0 && lastAggIdx < currentSteps.length - 1) {
+                            return { ok: false, msg: '「聚合」之后不能再添加「过滤」' };
+                        }
+                        return { ok: true };
+                    },
+                    virtual: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「虚拟字段」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    join: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「跨表关联」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    aggregate: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「聚合」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    formula: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「公式计算」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    constant: () => ({ ok: true }),
+                    text: () => ({ ok: true }),
+                    distinct: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「去重」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    sort: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「排序」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    limit: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「限制」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    lookup: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「查找替换」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    condition: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「条件判断」前需要有「数据源」' };
+                        return { ok: true };
+                    },
+                    group: () => {
+                        if (currentSteps.length === 0) return { ok: false, msg: '「分组聚合」前需要有「数据源」' };
+                        return { ok: true };
+                    }
+                };
+                
+                const check = stepLogicChecks[type] ? stepLogicChecks[type]() : { ok: true };
+                if (!check.ok) {
+                    addToast('warning', '步骤顺序不符合逻辑', check.msg);
+                    return;
+                }
                 
                 const defaultConfigs = {
                     source: { table: '', column: '' },
@@ -4334,7 +5465,13 @@
                     aggregate: { column: '', func: 'sum' },
                     formula: { expr: '{val}' },
                     constant: { value: 0 },
-                    text: { value: '' }
+                    text: { value: '' },
+                    distinct: { column: '' },
+                    sort: { column: '', direction: 'asc' },
+                    limit: { count: 100 },
+                    lookup: { column: '', pairs: [{ from: '', to: '' }] },
+                    condition: { column: '', op: '==', value: '', trueValue: 1, falseValue: 0, resultCol: 'condition_result' },
+                    group: { column: '', func: 'sum', aggColumn: 'val' }
                 };
                 
                 const newStep = {
@@ -4342,8 +5479,6 @@
                     type,
                     config: defaultConfigs[type] || {}
                 };
-                
-                const currentSteps = currentRule?.steps || [];
                 
                 Store.set(s => ({
                     ...s,
@@ -4761,7 +5896,259 @@
                                     />
                                 </div>
                                 <div className="step-desc">
-                                    <Icons.Info /> 根据关联键从另一个表中获取数据
+                                    <Icons.Info /> 根据关联键从另一个表中获取数据。也可在外部数据表中选择「跨表关联」并指定 externalId
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'distinct':
+                        return (
+                            <div className="step-config">
+                                <div className="form-item">
+                                    <label className="form-label">去重列</label>
+                                    <input 
+                                        type="text"
+                                        className="input"
+                                        value={step.config.column}
+                                        onChange={e => updateStepConfig(step.id, 'column', e.target.value)}
+                                        placeholder="默认使用当前值(val)"
+                                    />
+                                </div>
+                                <div className="step-desc">
+                                    <Icons.Info /> 去除指定列的重复值，保留第一次出现的行
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'sort':
+                        return (
+                            <div className="step-config">
+                                <div className="grid-2">
+                                    <div className="form-item">
+                                        <label className="form-label">排序列</label>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            value={step.config.column}
+                                            onChange={e => updateStepConfig(step.id, 'column', e.target.value)}
+                                            placeholder="默认使用当前值(val)"
+                                        />
+                                    </div>
+                                    <div className="form-item">
+                                        <label className="form-label">排序方向</label>
+                                        <select 
+                                            className="select"
+                                            value={step.config.direction}
+                                            onChange={e => updateStepConfig(step.id, 'direction', e.target.value)}
+                                        >
+                                            <option value="asc">升序</option>
+                                            <option value="desc">降序</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="step-desc">
+                                    <Icons.Info /> 按指定列的值排序，数字按数值排序，文本按字典序排序
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'limit':
+                        return (
+                            <div className="step-config">
+                                <div className="form-item">
+                                    <label className="form-label">限制数量</label>
+                                    <input 
+                                        type="number"
+                                        className="input"
+                                        value={step.config.count}
+                                        onChange={e => updateStepConfig(step.id, 'count', Number(e.target.value))}
+                                        min={1}
+                                    />
+                                </div>
+                                <div className="step-desc">
+                                    <Icons.Info /> 只保留前N行数据
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'condition':
+                        return (
+                            <div className="step-config">
+                                <div className="grid-2">
+                                    <div className="form-item">
+                                        <label className="form-label">判断列</label>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            value={step.config.column}
+                                            onChange={e => updateStepConfig(step.id, 'column', e.target.value)}
+                                            placeholder="默认使用当前值(val)"
+                                        />
+                                    </div>
+                                    <div className="form-item">
+                                        <label className="form-label">操作符</label>
+                                        <select 
+                                            className="select"
+                                            value={step.config.op}
+                                            onChange={e => updateStepConfig(step.id, 'op', e.target.value)}
+                                        >
+                                            <option value="==">等于</option>
+                                            <option value="!=">不等于</option>
+                                            <option value=">">大于</option>
+                                            <option value="<">小于</option>
+                                            <option value=">=">大于等于</option>
+                                            <option value="<=">小于等于</option>
+                                            <option value="contains">包含</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="form-item">
+                                    <label className="form-label">对比值</label>
+                                    <input 
+                                        type="text"
+                                        className="input"
+                                        value={step.config.value}
+                                        onChange={e => updateStepConfig(step.id, 'value', e.target.value)}
+                                        placeholder="输入对比值"
+                                    />
+                                </div>
+                                <div className="grid-2">
+                                    <div className="form-item">
+                                        <label className="form-label">满足条件的值</label>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            value={step.config.trueValue}
+                                            onChange={e => updateStepConfig(step.id, 'trueValue', e.target.value)}
+                                            placeholder="默认 1"
+                                        />
+                                    </div>
+                                    <div className="form-item">
+                                        <label className="form-label">不满足的值</label>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            value={step.config.falseValue}
+                                            onChange={e => updateStepConfig(step.id, 'falseValue', e.target.value)}
+                                            placeholder="默认 0"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="step-desc">
+                                    <Icons.Info /> 根据条件判断返回不同值，结果存入 condition_result 列
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'group':
+                        return (
+                            <div className="step-config">
+                                <div className="grid-2">
+                                    <div className="form-item">
+                                        <label className="form-label">分组列</label>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            value={step.config.column}
+                                            onChange={e => updateStepConfig(step.id, 'column', e.target.value)}
+                                            placeholder="按此列分组"
+                                        />
+                                    </div>
+                                    <div className="form-item">
+                                        <label className="form-label">聚合列</label>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            value={step.config.aggColumn}
+                                            onChange={e => updateStepConfig(step.id, 'aggColumn', e.target.value)}
+                                            placeholder="默认 val"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-item">
+                                    <label className="form-label">聚合函数</label>
+                                    <select 
+                                        className="select"
+                                        value={step.config.func}
+                                        onChange={e => updateStepConfig(step.id, 'func', e.target.value)}
+                                    >
+                                        <option value="sum">求和</option>
+                                        <option value="avg">平均值</option>
+                                        <option value="count">计数</option>
+                                        <option value="max">最大值</option>
+                                        <option value="min">最小值</option>
+                                    </select>
+                                </div>
+                                <div className="step-desc">
+                                    <Icons.Info /> 按指定列分组后对另一列进行聚合计算
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'lookup':
+                        return (
+                            <div className="step-config">
+                                <div className="form-item">
+                                    <label className="form-label">查找列</label>
+                                    <input 
+                                        type="text"
+                                        className="input"
+                                        value={step.config.column}
+                                        onChange={e => updateStepConfig(step.id, 'column', e.target.value)}
+                                        placeholder="默认使用当前值(val)"
+                                    />
+                                </div>
+                                <div className="form-item">
+                                    <label className="form-label">映射表</label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {(step.config.pairs || []).map((pair, idx) => (
+                                            <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                <input 
+                                                    type="text"
+                                                    className="input"
+                                                    value={pair.from}
+                                                    onChange={e => {
+                                                        const newPairs = [...(step.config.pairs || [])];
+                                                        newPairs[idx] = { ...pair, from: e.target.value };
+                                                        updateStepConfig(step.id, 'pairs', newPairs);
+                                                    }}
+                                                    placeholder="原值"
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <span style={{ color: 'var(--text-tertiary)' }}>→</span>
+                                                <input 
+                                                    type="text"
+                                                    className="input"
+                                                    value={pair.to}
+                                                    onChange={e => {
+                                                        const newPairs = [...(step.config.pairs || [])];
+                                                        newPairs[idx] = { ...pair, to: e.target.value };
+                                                        updateStepConfig(step.id, 'pairs', newPairs);
+                                                    }}
+                                                    placeholder="替换值"
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <button 
+                                                    className="btn-link danger"
+                                                    onClick={() => {
+                                                        const newPairs = (step.config.pairs || []).filter((_, i) => i !== idx);
+                                                        updateStepConfig(step.id, 'pairs', newPairs);
+                                                    }}
+                                                >
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <Button size="sm" onClick={() => {
+                                            const newPairs = [...(step.config.pairs || []), { from: '', to: '' }];
+                                            updateStepConfig(step.id, 'pairs', newPairs);
+                                        }}>
+                                            <Icons.Plus /> 添加映射
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="step-desc">
+                                    <Icons.Info /> 查找指定列的值并替换为映射表中的对应值
                                 </div>
                             </div>
                         );
@@ -4777,8 +6164,116 @@
                 }
             };
             
+            const renderPresetGrid = () => {
+                const allPresets = CalcEngine.getPresetTemplates();
+                const platformPresets = allPresets[presetCategory] || allPresets.all || [];
+                const categoryKeys = ['all', 'pdd', 'taobao', 'douyin'];
+                const platformNames = { all: '通用', pdd: '拼多多', taobao: '淘宝', douyin: '抖音' };
+                const recommend = activeField ? recommendPreset(activeField.name) : null;
+                
+                return (
+                    <>
+                        <div className="preset-tabs">
+                            {categoryKeys.map(key => {
+                                const count = (allPresets[key] || []).length;
+                                return (
+                                    <div 
+                                        key={key}
+                                        className={`preset-tab ${presetCategory === key ? 'active' : ''}`}
+                                        onClick={() => setPresetCategory(key)}
+                                    >
+                                        {platformNames[key]}
+                                        <span className="preset-tab-count">{count}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        
+                        {recommend && (
+                            <div className="preset-recommend">
+                                <div className="preset-recommend-tag">
+                                    <Icons.Sparkles /> 智能推荐
+                                </div>
+                                <div className="preset-recommend-content">
+                                    <div>
+                                        <div className="preset-recommend-name">{recommend.name}</div>
+                                        <div className="preset-recommend-desc">{recommend.desc}</div>
+                                    </div>
+                                    <Button type="primary" size="sm" onClick={() => applyPreset(recommend)}>
+                                        一键应用
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="preset-grid">
+                            {platformPresets.map(preset => {
+                                const catInfo = getCategoryInfo(preset.category);
+                                return (
+                                    <div 
+                                        key={preset.id}
+                                        className="preset-card"
+                                        onClick={() => applyPreset(preset)}
+                                    >
+                                        <div className="preset-card-header">
+                                            <span className="preset-card-category" style={{ color: catInfo.color }}>
+                                                {catInfo.icon} {catInfo.name}
+                                            </span>
+                                            {preset.level !== undefined && (
+                                                <span className={`preset-card-level level-${preset.level}`}>
+                                                    L{preset.level}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="preset-card-title">{preset.name}</div>
+                                        <div className="preset-card-desc">{preset.desc}</div>
+                                        <div className="preset-card-steps">
+                                            {preset.steps.length} 个步骤
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {platformPresets.length === 0 && (
+                                <div className="empty" style={{ gridColumn: '1 / -1', padding: '30px 20px' }}>
+                                    <div className="empty-icon">📋</div>
+                                    <div className="empty-text">该分类暂无模板</div>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                );
+            };
+            
             return (
                 <div className="fade-in">
+                    <div className="rules-header">
+                        <div className="rules-header-info">
+                            <div className="rules-progress">
+                                <div className="rules-progress-text">
+                                    <span style={{ fontWeight: 600 }}>{completedCount}</span>
+                                    <span style={{ color: 'var(--text-tertiary)' }}> / {fields.length} 字段已配置</span>
+                                </div>
+                                <div className="rules-progress-bar">
+                                    <div 
+                                        className="rules-progress-fill" 
+                                        style={{ width: `${completionRate}%` }}
+                                    />
+                                </div>
+                                <div className="rules-progress-percent">{completionRate}%</div>
+                            </div>
+                        </div>
+                        <div className="rules-header-actions">
+                            <Button 
+                                size="sm" 
+                                onClick={() => setShowCopyModal(true)}
+                                disabled={fields.length < 2}
+                            >
+                                <Icons.Copy />
+                                复制规则
+                            </Button>
+                        </div>
+                    </div>
+                    
                     <Alert type="info">
                         <strong>配置说明：</strong>选择左侧字段，然后在右侧配置计算步骤。系统将按照步骤顺序依次计算，最终结果填入模板对应单元格。
                     </Alert>
@@ -4793,23 +6288,65 @@
                                     </div>
                                     <span className="tag tag-default">{fields.length}</span>
                                 </div>
+                                {fields.length > 0 && (
+                                    <div className="field-search-bar">
+                                        <span className="field-search-icon"><Icons.Search /></span>
+                                        <input 
+                                            type="text"
+                                            className="input"
+                                            placeholder="搜索字段名或单元格..."
+                                            value={fieldSearch}
+                                            onChange={e => setFieldSearch(e.target.value)}
+                                        />
+                                        {fieldSearch && (
+                                            <button 
+                                                className="field-search-clear"
+                                                onClick={() => setFieldSearch('')}
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                                 <ul className="field-list">
                                     {fields.length === 0 ? (
                                         <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
                                             请先在模板中心上传模板
                                         </div>
+                                    ) : filteredFields.length === 0 ? (
+                                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
+                                            未找到匹配字段
+                                        </div>
                                     ) : (
-                                        fields.map(field => (
-                                            <li 
-                                                key={field.id}
-                                                className={`field-item ${activeField?.id === field.id ? 'active' : ''}`}
-                                                onClick={() => setActiveField(field)}
-                                            >
-                                                <span className={`field-dot ${savedRules[field.id]?.steps?.length > 0 ? 'done' : ''}`}></span>
-                                                <span className="field-name">{field.name}</span>
-                                                <span className="field-cell">{field.cell}</span>
-                                            </li>
-                                        ))
+                                        filteredFields.map(field => {
+                                            const level = inferFieldLevel(field);
+                                            const validation = validateRule(savedRules[field.id]);
+                                            return (
+                                                <li 
+                                                    key={field.id}
+                                                    className={`field-item ${activeField?.id === field.id ? 'active' : ''}`}
+                                                    onClick={() => setActiveField(field)}
+                                                >
+                                                    <span className={`field-dot ${(savedRules[field.id]?.steps || []).length > 0 ? (validation.valid ? 'done' : 'partial') : ''}`}></span>
+                                                    <div className="field-item-content">
+                                                        <div className="field-name">{field.name}</div>
+                                                        <div className="field-meta">
+                                                            <span className="field-cell">{field.cell}</span>
+                                                            {level !== null && (
+                                                                <span className={`field-level-tag level-${level}`}>
+                                                                    L{level}
+                                                                </span>
+                                                            )}
+                                                            {(savedRules[field.id]?.steps || []).length > 0 && !validation.valid && (
+                                                                <span className="field-warning" title={validation.msg}>
+                                                                    ⚠
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })
                                     )}
                                 </ul>
                             </div>
@@ -4818,7 +6355,7 @@
                         <div className="workspace-right">
                             <div className="card">
                                 <div className="card-header">
-                                    <div>
+                                    <div style={{ flex: 1 }}>
                                         <div className="card-title" style={{ fontSize: 14 }}>
                                             <Icons.Calculator />
                                             {activeField ? `「${activeField.name}」计算规则` : '请选择字段'}
@@ -4826,14 +6363,28 @@
                                         {activeField && (
                                             <div className="card-desc">
                                                 单元格 {activeField.cell} · {activeField.type === 'text' ? '文本填充' : '数值填充'}
+                                                {(() => {
+                                                    const v = validateRule(currentRule);
+                                                    return (
+                                                        <span className={`field-status ${v.valid ? 'valid' : 'invalid'}`}>
+                                                            {v.valid ? '✓ ' + v.msg : '⚠ ' + v.msg}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </div>
                                         )}
                                     </div>
-                                    {activeField && currentRule?.steps?.length > 0 && (
-                                        <Button type="primary" size="sm" onClick={runPreview}>
-                                            <Icons.Play />
-                                            预览结果
-                                        </Button>
+                                    {activeField && (currentRule?.steps?.length > 0) && (
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <Button size="sm" onClick={() => clearFieldRule(activeField.id)}>
+                                                <Icons.Refresh />
+                                                清空
+                                            </Button>
+                                            <Button type="primary" size="sm" onClick={runPreview}>
+                                                <Icons.Play />
+                                                预览结果
+                                            </Button>
+                                        </div>
                                     )}
                                 </div>
                                 
@@ -4848,6 +6399,7 @@
                                                             <div 
                                                                 className={`flow-step ${idx === expandedStep ? 'active' : ''}`}
                                                                 onClick={() => setExpandedStep(expandedStep === step.id ? null : step.id)}
+                                                                style={{ borderColor: info.color }}
                                                             >
                                                                 {info.icon}
                                                                 <span>{idx + 1}. {info.name}</span>
@@ -4866,7 +6418,7 @@
                                                 <div className="empty" style={{ padding: '40px 20px' }}>
                                                     <div className="empty-icon">🧮</div>
                                                     <div className="empty-text">暂无计算步骤</div>
-                                                    <div className="empty-desc">点击下方按钮添加计算步骤</div>
+                                                    <div className="empty-desc">点击下方按钮添加计算步骤，或套用预设模板</div>
                                                 </div>
                                             ) : (
                                                 currentRule.steps.map((step, idx) => {
@@ -4876,16 +6428,27 @@
                                                     return (
                                                         <div key={step.id} className="step-card">
                                                             <div className="step-header">
-                                                                <div className="step-number">{idx + 1}</div>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                    {info.icon}
+                                                                <div className="step-number" style={{ background: info.color }}>{idx + 1}</div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                                                                    <span style={{ color: info.color }}>{info.icon}</span>
                                                                     <span className="step-title">{info.name}</span>
+                                                                    <span className="step-summary">
+                                                                        {summarizeStep(step)}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="step-actions">
                                                                     <button 
                                                                         className="step-action-btn"
+                                                                        onClick={() => duplicateStep(step.id)}
+                                                                        title="克隆步骤"
+                                                                    >
+                                                                        <Icons.Copy />
+                                                                    </button>
+                                                                    <button 
+                                                                        className="step-action-btn"
                                                                         onClick={() => moveStep(step.id, 'up')}
                                                                         disabled={idx === 0}
+                                                                        title="上移"
                                                                     >
                                                                         <Icons.MoveUp />
                                                                     </button>
@@ -4893,18 +6456,21 @@
                                                                         className="step-action-btn"
                                                                         onClick={() => moveStep(step.id, 'down')}
                                                                         disabled={idx === currentRule.steps.length - 1}
+                                                                        title="下移"
                                                                     >
                                                                         <Icons.MoveDown />
                                                                     </button>
                                                                     <button 
                                                                         className="step-action-btn"
                                                                         onClick={() => setExpandedStep(isExpanded ? null : step.id)}
+                                                                        title={isExpanded ? '收起' : '展开'}
                                                                     >
                                                                         {isExpanded ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
                                                                     </button>
                                                                     <button 
                                                                         className="step-action-btn danger"
                                                                         onClick={() => deleteStep(step.id)}
+                                                                        title="删除"
                                                                     >
                                                                         <Icons.Trash />
                                                                     </button>
@@ -4917,28 +6483,19 @@
                                             )}
                                         </div>
                                         
-                                        <div className="preset-grid">
-                                            {CalcEngine.getPresetTemplates().map(preset => (
-                                                <div 
-                                                    key={preset.id}
-                                                    className="preset-card"
-                                                    onClick={() => applyPreset(preset)}
-                                                >
-                                                    <div className="preset-card-title">{preset.name}</div>
-                                                    <div className="preset-card-desc">{preset.desc}</div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        {renderPresetGrid()}
                                         
                                         <div className="add-step-buttons">
                                             <div className="section-title" style={{ width: '100%', marginBottom: 0 }}>添加步骤</div>
-                                            {['source', 'filter', 'virtual', 'join', 'aggregate', 'formula'].map(type => {
+                                            {['source', 'filter', 'virtual', 'join', 'aggregate', 'formula', 'distinct', 'sort', 'limit', 'lookup', 'condition', 'group'].map(type => {
                                                 const info = getStepTypeInfo(type);
                                                 return (
                                                     <button 
                                                         key={type}
                                                         className="btn btn-default btn-sm"
                                                         onClick={() => addStep(type)}
+                                                        style={{ borderColor: info.color, color: info.color }}
+                                                        title={info.name}
                                                     >
                                                         {info.icon}
                                                         {info.name}
@@ -4959,6 +6516,67 @@
                             </div>
                         </div>
                     </div>
+                    
+                    {showCopyModal && (
+                        <Modal 
+                            title="复制规则到其他字段"
+                            onClose={() => { setShowCopyModal(false); setCopySourceFieldId(''); }}
+                            footer={
+                                <>
+                                    <Button onClick={() => { setShowCopyModal(false); setCopySourceFieldId(''); }}>
+                                        取消
+                                    </Button>
+                                    <Button 
+                                        type="primary" 
+                                        disabled={!copySourceFieldId}
+                                        onClick={() => copyFieldRule(copySourceFieldId, activeField?.id)}
+                                    >
+                                        确认复制
+                                    </Button>
+                                </>
+                            }
+                        >
+                            <div className="copy-rule-form">
+                                <Alert type="info">
+                                    将已配置字段的规则复制到当前字段「{activeField?.name}」。源字段和目标字段不能相同。
+                                </Alert>
+                                <div className="form-item" style={{ marginTop: 12 }}>
+                                    <label className="form-label">选择源字段（要复制其规则的字段）</label>
+                                    <select 
+                                        className="select"
+                                        value={copySourceFieldId}
+                                        onChange={e => setCopySourceFieldId(e.target.value)}
+                                    >
+                                        <option value="">请选择源字段</option>
+                                        {fields
+                                            .filter(f => (savedRules[f.id]?.steps || []).length > 0 && f.id !== activeField?.id)
+                                            .map(f => (
+                                                <option key={f.id} value={f.id}>
+                                                    {f.name} ({(savedRules[f.id]?.steps || []).length}个步骤)
+                                                </option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
+                                {copySourceFieldId && (
+                                    <div className="copy-rule-preview">
+                                        <div className="copy-rule-preview-title">源规则预览：</div>
+                                        {(savedRules[copySourceFieldId]?.steps || []).map((s, i) => {
+                                            const info = getStepTypeInfo(s.type);
+                                            return (
+                                                <div key={s.id} className="copy-rule-step">
+                                                    <span style={{ color: info.color }}>{i + 1}. {info.name}</span>
+                                                    <span className="copy-rule-step-summary">
+                                                        {summarizeStep(s)}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </Modal>
+                    )}
                     
                     {showPreview && previewResult && (
                         <Modal 
@@ -5017,6 +6635,618 @@
                                 </table>
                             </div>
                         </Modal>
+                    )}
+                </div>
+            );
+        };
+        
+        // ========== External Data Page ==========
+        const ExternalsPage = ({ state, currentPlatform }) => {
+            const { addToast } = useToast();
+            const [searchQuery, setSearchQuery] = useState('');
+            const [previewExternal, setPreviewExternal] = useState(null);
+            const [isUploading, setIsUploading] = useState(false);
+            const [uploadProgress, setUploadProgress] = useState(0);
+            const fileInputRef = useRef(null);
+            const externals = state.externals || [];
+            const platform = state.platforms.find(p => p.id === currentPlatform);
+            
+            const handleUpload = async (e) => {
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+                
+                setIsUploading(true);
+                setUploadProgress(0);
+                
+                try {
+                    const newExternals = [];
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const result = await ExcelUtils.parse(file, (p) => {
+                            setUploadProgress(Math.round(((i + p / 100) / files.length) * 100));
+                        });
+                        
+                        const sheetEntries = Object.entries(result.sheets).map(([name, data]) => ({
+                            id: `ext_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                            fileName: result.fileName,
+                            sheetName: name,
+                            sheetKey: name.includes('::') ? name.split('::').pop() : name,
+                            rows: data.rows.length,
+                            cols: data.headers.length,
+                            headers: data.headers,
+                            data: data.rows.slice(0, 100),
+                            allData: data.rows,
+                            uploadTime: new Date().toISOString(),
+                            platformId: currentPlatform,
+                            fileSize: result.fileSize
+                        }));
+                        
+                        newExternals.push(...sheetEntries);
+                    }
+                    
+                    Store.set(s => ({
+                        ...s,
+                        externals: [...(s.externals || []), ...newExternals]
+                    }));
+                    
+                    addToast('success', '上传成功', `成功导入 ${newExternals.length} 个外部数据表`);
+                    ActivityLogger.add('上传外部数据', `${platform?.name} - ${newExternals.length}个表`);
+                } catch (err) {
+                    addToast('error', '上传失败', err.message);
+                } finally {
+                    setIsUploading(false);
+                    setUploadProgress(0);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                }
+            };
+            
+            const deleteExternal = (id) => {
+                Store.set(s => ({
+                    ...s,
+                    externals: (s.externals || []).filter(e => e.id !== id)
+                }));
+                addToast('success', '删除成功', '外部数据表已删除');
+            };
+            
+            const filteredExternals = externals.filter(e => 
+                e.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                e.sheetName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                e.sheetKey.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            
+            return (
+                <div className="card">
+                    <div className="card-header">
+                        <div>
+                            <div className="card-title">
+                                <Icons.Database />
+                                外部数据表
+                            </div>
+                            <div className="card-desc">
+                                管理跨平台共享的外部数据（商品成本表、费率表等），可在计算规则中引用
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <Button onClick={() => fileInputRef.current?.click()} loading={isUploading}>
+                                <Icons.Upload />
+                                上传数据表
+                            </Button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xlsx,.xls,.zip"
+                                multiple
+                                onChange={handleUpload}
+                                style={{ display: 'none' }}
+                            />
+                        </div>
+                    </div>
+                    
+                    {isUploading && (
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>上传解析中...</span>
+                                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{uploadProgress}%</span>
+                            </div>
+                            <div className="progress-bar">
+                                <div className="progress-fill" style={{ width: `${uploadProgress}%` }}></div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <Alert type="info">
+                        <strong>外部数据表：</strong>上传商品成本表、平台费率表等，可在「计算规则」的「跨表关联」步骤中引用。支持 .xlsx / .xls / .zip 格式。
+                    </Alert>
+                    
+                    <div className="search-bar">
+                        <span className="search-bar-icon"><Icons.Search /></span>
+                        <input 
+                            type="text"
+                            className="input"
+                            placeholder="搜索文件名或表名..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    
+                    <div className="data-table-container">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>文件名</th>
+                                    <th>工作表</th>
+                                    <th>数据量</th>
+                                    <th>字段数</th>
+                                    <th>上传时间</th>
+                                    <th style={{ width: 140 }}>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredExternals.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6}>
+                                            <div className="empty" style={{ padding: '40px 20px' }}>
+                                                <div className="empty-icon">🗄️</div>
+                                                <div className="empty-text">暂无外部数据表</div>
+                                                <div className="empty-desc">上传商品成本表、费率表等外部数据</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredExternals.map(ext => (
+                                        <tr key={ext.id}>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <Icons.FileSpreadsheet />
+                                                    <span style={{ fontWeight: 500 }}>{ext.fileName}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <Tag type="default">{ext.sheetKey}</Tag>
+                                            </td>
+                                            <td>{ext.rows.toLocaleString()} 行</td>
+                                            <td>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                    {ext.headers.slice(0, 3).map(h => (
+                                                        <span key={h} className="tag tag-default" style={{ fontSize: 10 }}>{h}</span>
+                                                    ))}
+                                                    {ext.headers.length > 3 && (
+                                                        <span className="tag tag-default" style={{ fontSize: 10 }}>+{ext.headers.length - 3}</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                                                {new Date(ext.uploadTime).toLocaleString('zh-CN')}
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <button className="btn-link" onClick={() => setPreviewExternal(ext)}>
+                                                        <Icons.Eye /> 预览
+                                                    </button>
+                                                    <button className="btn-link danger" onClick={() => deleteExternal(ext.id)}>
+                                                        <Icons.Trash /> 删除
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {previewExternal && (
+                        <Modal 
+                            title={`预览: ${previewExternal.sheetKey}`}
+                            size="lg"
+                            onClose={() => setPreviewExternal(null)}
+                        >
+                            <div style={{ maxHeight: 400, overflow: 'auto' }}>
+                                <table className="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            {previewExternal.headers.map(h => (
+                                                <th key={h}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {previewExternal.data.map((row, i) => (
+                                            <tr key={i}>
+                                                {previewExternal.headers.map(h => (
+                                                    <td key={h} style={{ fontSize: 12 }}>{row[h]}</td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {previewExternal.rows > 100 && (
+                                    <div style={{ textAlign: 'center', padding: 12, color: 'var(--text-tertiary)', fontSize: 12 }}>
+                                        仅显示前100行，共 {previewExternal.rows} 行
+                                    </div>
+                                )}
+                            </div>
+                        </Modal>
+                    )}
+                </div>
+            );
+        };
+        
+        // ========== Batch Calculation Page ==========
+        const BatchCalcPage = ({ state, currentPlatform }) => {
+            const { addToast } = useToast();
+            const [batchFiles, setBatchFiles] = useState([]);
+            const [isCalculating, setIsCalculating] = useState(false);
+            const [calcProgress, setCalcProgress] = useState(0);
+            const [results, setResults] = useState([]);
+            const fileInputRef = useRef(null);
+            const platform = state.platforms.find(p => p.id === currentPlatform);
+            const template = state.templates[currentPlatform];
+            const rules = state.rules[currentPlatform] || {};
+            const shops = platform?.shops || [];
+            
+            const detectShop = (fileName, fileData) => {
+                const baseName = fileName.replace(/\.[^.]+$/, '').toLowerCase();
+                for (const shop of shops) {
+                    const shopName = shop.name.toLowerCase();
+                    if (baseName.includes(shopName) || shopName.includes(baseName)) {
+                        return shop;
+                    }
+                }
+                const sheetNames = Object.keys(fileData.sheets || {});
+                for (const sheetName of sheetNames) {
+                    const lowerSheet = sheetName.toLowerCase();
+                    for (const shop of shops) {
+                        if (lowerSheet.includes(shop.name.toLowerCase())) {
+                            return shop;
+                        }
+                    }
+                }
+                const firstSheet = Object.values(fileData.sheets || {})[0];
+                if (firstSheet?.rows) {
+                    for (let i = 0; i < Math.min(5, firstSheet.rows.length); i++) {
+                        const row = firstSheet.rows[i];
+                        const rowText = Object.values(row).map(v => String(v || '').toLowerCase()).join(' ');
+                        for (const shop of shops) {
+                            if (rowText.includes(shop.name.toLowerCase())) {
+                                return shop;
+                            }
+                        }
+                    }
+                }
+                return null;
+            };
+            
+            const handleFileUpload = async (e) => {
+                const files = Array.from(e.target.files || []);
+                if (!files.length) return;
+                const newFiles = [];
+                for (const file of files) {
+                    try {
+                        const parsed = await ExcelUtils.parse(file);
+                        const shop = detectShop(file.name, parsed);
+                        newFiles.push({
+                            id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                            fileName: file.name,
+                            fileSize: file.size,
+                            data: parsed,
+                            detectedShop: shop,
+                            status: shop ? 'matched' : 'unmatched',
+                            selected: true
+                        });
+                    } catch (err) {
+                        newFiles.push({
+                            id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                            fileName: file.name,
+                            fileSize: file.size,
+                            error: err.message,
+                            status: 'error',
+                            selected: false
+                        });
+                    }
+                }
+                setBatchFiles(prev => [...prev, ...newFiles]);
+                const matched = newFiles.filter(f => f.status === 'matched').length;
+                const unmatched = newFiles.filter(f => f.status === 'unmatched').length;
+                if (matched > 0) addToast('success', '识别完成', `成功识别 ${matched} 个店铺，${unmatched} 个未识别`);
+            };
+            
+            const assignShop = (fileId, shopId) => {
+                const shop = shops.find(s => s.id === shopId);
+                setBatchFiles(prev => prev.map(f => f.id === fileId ? { ...f, detectedShop: shop || null, status: shop ? 'matched' : 'unmatched' } : f));
+            };
+            
+            const removeFile = (fileId) => {
+                setBatchFiles(prev => prev.filter(f => f.id !== fileId));
+            };
+            
+            const toggleSelected = (fileId) => {
+                setBatchFiles(prev => prev.map(f => f.id === fileId ? { ...f, selected: !f.selected } : f));
+            };
+            
+            const runBatchCalc = async () => {
+                const selected = batchFiles.filter(f => f.selected && f.status !== 'error');
+                if (!selected.length) {
+                    addToast('warning', '请先选择文件', '至少选择一个要计算的文件');
+                    return;
+                }
+                if (!template) {
+                    addToast('warning', '缺少模板', '请先在模板中心上传利润表模板');
+                    return;
+                }
+                const fields = template.parseResult?.fields || [];
+                const configured = fields.filter(f => (rules[f.id]?.steps || []).length > 0);
+                if (configured.length === 0) {
+                    addToast('warning', '缺少计算规则', '请先在计算规则页面配置字段规则');
+                    return;
+                }
+                
+                setIsCalculating(true);
+                setCalcProgress(0);
+                const calcResults = [];
+                
+                for (let i = 0; i < selected.length; i++) {
+                    const fileItem = selected[i];
+                    try {
+                        const firstSheet = Object.values(fileItem.data.sheets)[0];
+                        if (!firstSheet) continue;
+                        
+                        const tables = [{ id: 'main', rows: firstSheet.rows, headers: firstSheet.headers }];
+                        const resultValues = {};
+                        
+                        fields.forEach(field => {
+                            const rule = rules[field.id];
+                            if (rule?.steps?.length) {
+                                const val = CalcEngine.exec(rule, tables, { shopName: fileItem.detectedShop?.name || '' });
+                                resultValues[field.id] = val;
+                            }
+                        });
+                        
+                        calcResults.push({
+                            fileId: fileItem.id,
+                            fileName: fileItem.fileName,
+                            shop: fileItem.detectedShop,
+                            values: resultValues,
+                            status: 'success'
+                        });
+                    } catch (err) {
+                        calcResults.push({
+                            fileId: fileItem.id,
+                            fileName: fileItem.fileName,
+                            shop: fileItem.detectedShop,
+                            error: err.message,
+                            status: 'error'
+                        });
+                    }
+                    setCalcProgress(Math.round(((i + 1) / selected.length) * 100));
+                }
+                
+                setResults(calcResults);
+                setIsCalculating(false);
+                
+                const success = calcResults.filter(r => r.status === 'success').length;
+                addToast('success', '计算完成', `成功计算 ${success}/${calcResults.length} 个文件`);
+                
+                Store.set(s => ({
+                    ...s,
+                    calcHistory: [{
+                        id: Date.now(),
+                        time: new Date().toISOString(),
+                        platform: platform?.name,
+                        shopCount: calcResults.length,
+                        successCount: success,
+                        status: success === calcResults.length ? 'success' : 'partial',
+                        results: calcResults
+                    }, ...(s.calcHistory || [])].slice(0, 100)
+                }));
+            };
+            
+            const downloadResults = () => {
+                if (!template || results.length === 0) return;
+                const fields = template.parseResult?.fields || [];
+                const aoa = [fields.map(f => f.name)];
+                
+                results.filter(r => r.status === 'success').forEach(r => {
+                    const row = fields.map(f => {
+                        const v = r.values[f.id];
+                        if (v === null || v === undefined) return '';
+                        if (typeof v === 'object' && v.val !== undefined) return v.val;
+                        return v;
+                    });
+                    aoa.push(row);
+                });
+                
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(aoa);
+                XLSX.utils.book_append_sheet(wb, ws, '利润表');
+                const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                ExcelUtils.download(buf, `利润表_${platform?.name}_${new Date().toLocaleDateString('zh-CN')}.xlsx`);
+                addToast('success', '下载成功', '利润表已生成');
+            };
+            
+            return (
+                <div className="card">
+                    <div className="card-header">
+                        <div>
+                            <div className="card-title">
+                                <Icons.Calculator />
+                                批量计算
+                            </div>
+                            <div className="card-desc">
+                                上传店铺数据，系统自动识别店铺并生成利润表
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            {results.length > 0 && (
+                                <Button onClick={downloadResults}>
+                                    <Icons.Download />
+                                    下载结果
+                                </Button>
+                            )}
+                            <Button 
+                                type="primary" 
+                                onClick={runBatchCalc}
+                                loading={isCalculating}
+                                disabled={batchFiles.filter(f => f.selected).length === 0}
+                            >
+                                <Icons.Play />
+                                {isCalculating ? '计算中...' : '开始计算'}
+                            </Button>
+                        </div>
+                    </div>
+                    
+                    <Alert type="info">
+                        <strong>批量计算流程：</strong>① 上传店铺数据文件 → ② 系统自动识别店铺（支持文件名、工作表名、内容匹配）→ ③ 应用计算规则 → ④ 生成利润表
+                    </Alert>
+                    
+                    {isCalculating && (
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>正在计算...</span>
+                                <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{calcProgress}%</span>
+                            </div>
+                            <div className="progress-bar">
+                                <div className="progress-fill" style={{ width: `${calcProgress}%` }}></div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {batchFiles.length === 0 ? (
+                        <div 
+                            className="upload-area" 
+                            style={{ padding: '48px 24px', margin: '20px 0' }}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <div className="upload-icon">📊</div>
+                            <div className="upload-text">点击上传店铺数据文件</div>
+                            <div className="upload-hint">支持 .xlsx / .xls / .zip 格式，可批量上传多个文件</div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xlsx,.xls,.zip"
+                                multiple
+                                onChange={handleFileUpload}
+                                style={{ display: 'none' }}
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                                    已上传 {batchFiles.length} 个文件
+                                    <span style={{ color: 'var(--text-tertiary)', marginLeft: 8 }}>
+                                        (已识别 {batchFiles.filter(f => f.status === 'matched').length} 个店铺)
+                                    </span>
+                                </div>
+                                <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                                    <Icons.Plus /> 继续添加
+                                </Button>
+                                <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.zip" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
+                            </div>
+                            
+                            <div className="data-table-container">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th style={{ width: 40 }}><input type="checkbox" checked={batchFiles.length > 0 && batchFiles.every(f => f.selected)} onChange={() => setBatchFiles(prev => prev.map(f => ({ ...f, selected: !prev.every(x => x.selected) })))} /></th>
+                                            <th>文件名</th>
+                                            <th>识别店铺</th>
+                                            <th>数据量</th>
+                                            <th style={{ width: 100 }}>状态</th>
+                                            <th style={{ width: 60 }}>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {batchFiles.map(file => (
+                                            <tr key={file.id}>
+                                                <td><input type="checkbox" checked={file.selected} onChange={() => toggleSelected(file.id)} disabled={file.status === 'error'} /></td>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        <Icons.FileSpreadsheet />
+                                                        <span style={{ fontWeight: 500, fontSize: 13 }}>{file.fileName}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {file.status === 'error' ? (
+                                                        <span style={{ color: 'var(--danger)', fontSize: 12 }}>解析失败</span>
+                                                    ) : file.detectedShop ? (
+                                                        <Tag type="success">{file.detectedShop.name}</Tag>
+                                                    ) : (
+                                                        <select 
+                                                            className="select" 
+                                                            style={{ fontSize: 12, padding: '4px 8px', minWidth: 120 }}
+                                                            value=""
+                                                            onChange={e => assignShop(file.id, e.target.value)}
+                                                        >
+                                                            <option value="">手动选择店铺</option>
+                                                            {shops.map(s => (
+                                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                </td>
+                                                <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                                                    {file.data ? `${Object.values(file.data.sheets)[0]?.rows?.length || 0} 行` : '-'}
+                                                </td>
+                                                <td>
+                                                    {file.status === 'matched' ? (
+                                                        <Tag type="success">已识别</Tag>
+                                                    ) : file.status === 'unmatched' ? (
+                                                        <Tag type="warning">待匹配</Tag>
+                                                    ) : (
+                                                        <Tag type="danger">错误</Tag>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <button className="btn-link danger" onClick={() => removeFile(file.id)}>
+                                                        <Icons.Trash />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+                    
+                    {results.length > 0 && (
+                        <div style={{ marginTop: 20 }}>
+                            <div className="section-title">计算结果</div>
+                            <div className="data-table-container">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>文件名</th>
+                                            <th>店铺</th>
+                                            <th>状态</th>
+                                            <th>计算值预览</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {results.map((r, i) => (
+                                            <tr key={i}>
+                                                <td style={{ fontSize: 13 }}>{r.fileName}</td>
+                                                <td>{r.shop ? <Tag type="success">{r.shop.name}</Tag> : <span style={{ color: 'var(--text-quaternary)' }}>-</span>}</td>
+                                                <td>
+                                                    {r.status === 'success' ? (
+                                                        <Tag type="success">成功</Tag>
+                                                    ) : (
+                                                        <Tag type="danger">失败</Tag>
+                                                    )}
+                                                </td>
+                                                <td style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                                                    {r.status === 'success' 
+                                                        ? Object.entries(r.values).slice(0, 3).map(([k, v]) => `${k}: ${typeof v === 'object' ? v.val : v}`).join(', ') + (Object.keys(r.values).length > 3 ? '...' : '')
+                                                        : r.error
+                                                    }
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     )}
                 </div>
             );
@@ -5164,7 +7394,7 @@
                                     <input
                                         ref={fileInputRef}
                                         type="file"
-                                        accept=".xlsx,.xls"
+                                        accept=".xlsx,.xls,.zip"
                                         multiple
                                         onChange={handleSampleUpload}
                                         style={{ display: 'none' }}
@@ -5280,50 +7510,7 @@
                     )}
                     
                     {activeTab === 'batch' && (
-                        <div className="card">
-                            <div className="card-header">
-                                <div>
-                                    <div className="card-title">
-                                        <Icons.Calculator />
-                                        批量计算
-                                    </div>
-                                    <div className="card-desc">
-                                        上传店铺数据，一键批量生成利润表
-                                    </div>
-                                </div>
-                                <Button type="primary">
-                                    <Icons.Play />
-                                    开始计算
-                                </Button>
-                            </div>
-                            
-                            <Alert type="info">
-                                <strong>使用说明：</strong>批量计算功能需要先完成模板配置和规则配置。请确保已上传利润表模板并配置好各字段的计算规则。
-                            </Alert>
-                            
-                            <div className="batch-upload-section">
-                                <div className="batch-shop-list">
-                                    <div className="section-title">店铺列表</div>
-                                    <div style={{ 
-                                        padding: '12px',
-                                        background: 'var(--bg-tertiary)',
-                                        borderRadius: 'var(--radius-lg)',
-                                        textAlign: 'center',
-                                        color: 'var(--text-tertiary)',
-                                        fontSize: 13
-                                    }}>
-                                        暂无店铺数据
-                                    </div>
-                                </div>
-                                <div className="batch-main">
-                                    <div className="upload-area" style={{ padding: '48px 24px' }}>
-                                        <div className="upload-icon">📊</div>
-                                        <div className="upload-text">上传店铺数据文件</div>
-                                        <div className="upload-hint">支持批量上传多个店铺的数据表</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <BatchCalcPage state={state} currentPlatform={currentPlatform} />
                     )}
                     
                     {activeTab === 'history' && (
@@ -5392,33 +7579,300 @@
                     )}
                     
                     {activeTab === 'externals' && (
-                        <div className="card">
-                            <div className="card-header">
-                                <div>
-                                    <div className="card-title">
-                                        <Icons.Database />
-                                        外部数据
-                                    </div>
-                                    <div className="card-desc">
-                                        管理跨平台共享的外部数据表（如商品成本、费率等）
-                                    </div>
+                        <ExternalsPage state={state} currentPlatform={currentPlatform} />
+                    )}
+                </div>
+            );
+        };
+        
+        // ========== Shops Management Page ==========
+        const ShopsPage = ({ state, currentPlatform }) => {
+            const { addToast } = useToast();
+            const [searchQuery, setSearchQuery] = useState('');
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [editingShop, setEditingShop] = useState(null);
+            const [formData, setFormData] = useState({ name: '', code: '', note: '' });
+            
+            const platform = state.platforms.find(p => p.id === currentPlatform);
+            const shops = platform?.shops || [];
+            
+            const handleSave = () => {
+                if (!formData.name.trim()) {
+                    addToast('warning', '验证失败', '店铺名称不能为空');
+                    return;
+                }
+                
+                const shopData = {
+                    id: editingShop ? editingShop.id : `shop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                    name: formData.name.trim(),
+                    code: formData.code.trim(),
+                    note: formData.note.trim(),
+                    createdAt: editingShop ? editingShop.createdAt : new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                Store.set(s => ({
+                    ...s,
+                    platforms: s.platforms.map(p => {
+                        if (p.id !== currentPlatform) return p;
+                        const existing = p.shops || [];
+                        if (editingShop) {
+                            return { ...p, shops: existing.map(sh => sh.id === editingShop.id ? shopData : sh) };
+                        }
+                        return { ...p, shops: [...existing, shopData] };
+                    })
+                }));
+                
+                addToast('success', editingShop ? '更新成功' : '添加成功', `店铺「${shopData.name}」已${editingShop ? '更新' : '添加'}`);
+                setShowAddModal(false);
+                setEditingShop(null);
+                setFormData({ name: '', code: '', note: '' });
+            };
+            
+            const handleDelete = (shop) => {
+                if (!window.confirm(`确认删除店铺「${shop.name}」？此操作不可撤销。`)) return;
+                Store.set(s => ({
+                    ...s,
+                    platforms: s.platforms.map(p => {
+                        if (p.id !== currentPlatform) return p;
+                        return { ...p, shops: (p.shops || []).filter(sh => sh.id !== shop.id) };
+                    })
+                }));
+                addToast('success', '删除成功', `店铺「${shop.name}」已删除`);
+            };
+            
+            const openEdit = (shop) => {
+                setEditingShop(shop);
+                setFormData({ name: shop.name, code: shop.code || '', note: shop.note || '' });
+                setShowAddModal(true);
+            };
+            
+            const openAdd = () => {
+                setEditingShop(null);
+                setFormData({ name: '', code: '', note: '' });
+                setShowAddModal(true);
+            };
+            
+            const handleImportFromExcel = async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                    const result = await ExcelUtils.parse(file);
+                    const sheet = Object.values(result.sheets)[0];
+                    if (!sheet || !sheet.rows.length) {
+                        addToast('warning', '导入失败', '文件中未找到数据');
+                        return;
+                    }
+                    const headers = sheet.headers.map(h => String(h).trim());
+                    const nameIdx = headers.findIndex(h => /店铺|名称|name|店名/i.test(h));
+                    const codeIdx = headers.findIndex(h => /编号|代码|code|ID/i.test(h));
+                    const noteIdx = headers.findIndex(h => /备注|说明|note|描述/i.test(h));
+                    
+                    if (nameIdx === -1) {
+                        addToast('warning', '导入失败', '未找到「店铺名称」列，请确保表头包含「店铺名称」或「name」');
+                        return;
+                    }
+                    
+                    const imported = [];
+                    sheet.rows.forEach(row => {
+                        const name = row[headers[nameIdx]];
+                        if (name && String(name).trim()) {
+                            imported.push({
+                                id: `shop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                                name: String(name).trim(),
+                                code: codeIdx >= 0 ? String(row[headers[codeIdx]] || '').trim() : '',
+                                note: noteIdx >= 0 ? String(row[headers[noteIdx]] || '').trim() : '',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            });
+                        }
+                    });
+                    
+                    if (imported.length === 0) {
+                        addToast('warning', '导入失败', '未找到有效的店铺数据');
+                        return;
+                    }
+                    
+                    Store.set(s => ({
+                        ...s,
+                        platforms: s.platforms.map(p => {
+                            if (p.id !== currentPlatform) return p;
+                            return { ...p, shops: [...(p.shops || []), ...imported] };
+                        })
+                    }));
+                    
+                    addToast('success', '导入成功', `成功导入 ${imported.length} 个店铺`);
+                    ActivityLogger.add('批量导入店铺', `${platform?.name} - ${imported.length}个`);
+                } catch (err) {
+                    addToast('error', '导入失败', err.message);
+                }
+                e.target.value = '';
+            };
+            
+            const filteredShops = shops.filter(s => 
+                s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (s.code || '').toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            
+            return (
+                <div className="fade-in">
+                    <div className="card">
+                        <div className="card-header">
+                            <div>
+                                <div className="card-title">
+                                    <Icons.Store />
+                                    {platform?.name} 店铺管理
                                 </div>
-                                <Button type="primary">
+                                <div className="card-desc">
+                                    管理{platform?.name}下的店铺，用于批量计算时自动分发数据
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <Button onClick={() => document.getElementById('shop-import-input')?.click()}>
+                                    <Icons.Upload />
+                                    Excel导入
+                                </Button>
+                                <input 
+                                    id="shop-import-input"
+                                    type="file" 
+                                    accept=".xlsx,.xls"
+                                    onChange={handleImportFromExcel}
+                                    style={{ display: 'none' }}
+                                />
+                                <Button type="primary" onClick={openAdd}>
                                     <Icons.Plus />
-                                    新建数据表
+                                    添加店铺
                                 </Button>
                             </div>
-                            
-                            <Alert type="info">
-                                <strong>外部数据表：</strong>外部数据可以被所有平台的计算规则引用，支持实时编辑。例如商品成本表、平台费率表等。
-                            </Alert>
-                            
-                            <div className="empty" style={{ padding: '40px 20px' }}>
-                                <div className="empty-icon">🗄️</div>
-                                <div className="empty-text">暂无外部数据表</div>
-                                <div className="empty-desc">点击「新建数据表」添加外部数据</div>
-                            </div>
                         </div>
+                        
+                        <Alert type="info">
+                            <strong>店铺管理：</strong>店铺信息用于批量计算时识别和分发数据。支持手动添加或通过Excel批量导入。
+                        </Alert>
+                        
+                        <div className="search-bar">
+                            <span className="search-bar-icon"><Icons.Search /></span>
+                            <input 
+                                type="text"
+                                className="input"
+                                placeholder="搜索店铺名称或编号..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        
+                        <div className="data-table-container">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: 60 }}>#</th>
+                                        <th>店铺名称</th>
+                                        <th>店铺编号</th>
+                                        <th>备注</th>
+                                        <th>添加时间</th>
+                                        <th style={{ width: 140 }}>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredShops.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6}>
+                                                <div className="empty" style={{ padding: '40px 20px' }}>
+                                                    <div className="empty-icon">🏪</div>
+                                                    <div className="empty-text">暂无店铺</div>
+                                                    <div className="empty-desc">添加店铺或从Excel导入</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredShops.map((shop, idx) => (
+                                            <tr key={shop.id}>
+                                                <td style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{idx + 1}</td>
+                                                <td style={{ fontWeight: 500 }}>{shop.name}</td>
+                                                <td>
+                                                    {shop.code ? (
+                                                        <Tag type="default">{shop.code}</Tag>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--text-quaternary)' }}>-</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ color: 'var(--text-tertiary)', fontSize: 12, maxWidth: 200 }} className="truncate">
+                                                    {shop.note || '-'}
+                                                </td>
+                                                <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                                                    {new Date(shop.createdAt).toLocaleDateString('zh-CN')}
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        <button className="btn-link" onClick={() => openEdit(shop)}>
+                                                            <Icons.Settings /> 编辑
+                                                        </button>
+                                                        <button className="btn-link danger" onClick={() => handleDelete(shop)}>
+                                                            <Icons.Trash /> 删除
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                            <span>共 {shops.length} 个店铺</span>
+                            <span>{platform?.name}平台</span>
+                        </div>
+                    </div>
+                    
+                    {showAddModal && (
+                        <Modal 
+                            title={editingShop ? '编辑店铺' : '添加店铺'}
+                            onClose={() => { setShowAddModal(false); setEditingShop(null); }}
+                            footer={
+                                <>
+                                    <Button onClick={() => { setShowAddModal(false); setEditingShop(null); }}>
+                                        取消
+                                    </Button>
+                                    <Button type="primary" onClick={handleSave}>
+                                        {editingShop ? '保存修改' : '添加店铺'}
+                                    </Button>
+                                </>
+                            }
+                        >
+                            <div className="form-item">
+                                <label className="form-label">店铺名称 <span style={{ color: 'var(--danger)' }}>*</span></label>
+                                <input 
+                                    type="text"
+                                    className="input"
+                                    placeholder="如：旗舰店、专营店等"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="form-item">
+                                <label className="form-label">店铺编号</label>
+                                <input 
+                                    type="text"
+                                    className="input"
+                                    placeholder="店铺内部编号（选填）"
+                                    value={formData.code}
+                                    onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-item">
+                                <label className="form-label">备注</label>
+                                <textarea 
+                                    className="input"
+                                    placeholder="备注信息（选填）"
+                                    value={formData.note}
+                                    onChange={e => setFormData({ ...formData, note: e.target.value })}
+                                    rows={3}
+                                    style={{ resize: 'vertical' }}
+                                />
+                            </div>
+                        </Modal>
                     )}
                 </div>
             );
@@ -5430,12 +7884,43 @@
             const [currentPage, setCurrentPage] = useState('dashboard');
             const [currentPlatform, setCurrentPlatform] = useState('pdd');
             const [showShortcuts, setShowShortcuts] = useState(true);
+            const [versionInfo, setVersionInfo] = useState({ current: '5.0.0', latest: null, hasUpdate: false });
             
             useEffect(() => {
                 const unsub = Store.sub(newState => {
                     setState({ ...newState });
                 });
                 return unsub;
+            }, []);
+            
+            useEffect(() => {
+                const checkVersion = async () => {
+                    try {
+                        const currentVersion = document.querySelector('meta[name="app-version"]')?.content || '5.0.0';
+                        const response = await fetch(window.location.href, { cache: 'no-store', method: 'HEAD' });
+                        if (!response.ok) return;
+                        
+                        const text = await fetch(window.location.href, { cache: 'no-store' }).then(r => r.text());
+                        const match = text.match(/<meta[^>]*name=["']app-version["'][^>]*content=["']([^"']+)["']/i) 
+                            || text.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']app-version["']/i);
+                        const latestVersion = match ? match[1] : currentVersion;
+                        
+                        const parseVer = (v) => v.split('.').map(Number);
+                        const cur = parseVer(currentVersion);
+                        const lat = parseVer(latestVersion);
+                        let hasUpdate = false;
+                        for (let i = 0; i < 3; i++) {
+                            if (lat[i] > cur[i]) { hasUpdate = true; break; }
+                            if (lat[i] < cur[i]) break;
+                        }
+                        
+                        setVersionInfo({ current: currentVersion, latest: latestVersion, hasUpdate });
+                    } catch (e) {}
+                };
+                
+                checkVersion();
+                const interval = setInterval(checkVersion, 5 * 60 * 1000);
+                return () => clearInterval(interval);
             }, []);
             
             useEffect(() => {
@@ -5476,14 +7961,16 @@
                 { id: 'dashboard', name: '数据概览', icon: <Icons.Home /> },
                 { id: 'template', name: '模板中心', icon: <Icons.FileSpreadsheet /> },
                 { id: 'rules', name: '计算规则', icon: <Icons.Calculator /> },
-                { id: 'data', name: '数据管理', icon: <Icons.Database /> }
+                { id: 'data', name: '数据管理', icon: <Icons.Database /> },
+                { id: 'shops', name: '店铺管理', icon: <Icons.Store /> }
             ];
             
             const pageTitles = {
                 dashboard: { title: '数据概览', subtitle: '查看系统配置和统计信息' },
                 template: { title: '模板中心', subtitle: '上传和配置利润表模板' },
                 rules: { title: '计算规则', subtitle: '配置字段的计算逻辑' },
-                data: { title: '数据管理', subtitle: '管理样表数据和批量计算' }
+                data: { title: '数据管理', subtitle: '管理样表数据和批量计算' },
+                shops: { title: '店铺管理', subtitle: '管理各平台下的店铺信息' }
             };
             
             const renderPage = () => {
@@ -5496,6 +7983,8 @@
                         return <RulesPage state={state} currentPlatform={currentPlatform} />;
                     case 'data':
                         return <DataPage state={state} currentPlatform={currentPlatform} />;
+                    case 'shops':
+                        return <ShopsPage state={state} currentPlatform={currentPlatform} onNavigate={setCurrentPage} />;
                     default:
                         return <DashboardPage state={state} onNavigate={setCurrentPage} />;
                 }
@@ -5542,6 +8031,38 @@
                     </aside>
                     
                     <main className="main">
+                        {versionInfo.hasUpdate && (
+                            <div style={{
+                                background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+                                color: 'white',
+                                padding: '10px 20px',
+                                fontSize: 13,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 12
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Icons.Sparkles />
+                                    <span>发现新版本 <strong>v{versionInfo.latest}</strong>（当前 v{versionInfo.current}），请刷新页面获取最新功能</span>
+                                </div>
+                                <button 
+                                    onClick={() => window.location.reload()}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.2)',
+                                        border: '1px solid rgba(255,255,255,0.4)',
+                                        color: 'white',
+                                        padding: '4px 14px',
+                                        borderRadius: 6,
+                                        fontSize: 12,
+                                        cursor: 'pointer',
+                                        fontWeight: 600
+                                    }}
+                                >
+                                    立即刷新
+                                </button>
+                            </div>
+                        )}
                         <header className="main-header">
                             <div className="main-header-left">
                                 <div>
